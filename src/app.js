@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 dotenv.config({
   path: "./src/config/config.env",
@@ -16,6 +17,13 @@ app.use(
   })
 );
 app.use(cookieParser());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true, //to access cookies
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 //Route imports
 import userRouters from "./routes/user.js";
@@ -30,6 +38,12 @@ app.use("/api/v1", courseRouters);
 app.use("/api/v1", paymentRouters);
 app.use("/api/v1", otherRouters);
 
+//default route
+app.get("/", (req, res) => {
+  res.send(
+    `<h1>Site is working, click <a href=${process.env.FRONTEND_URL}>here</a> to visit frontend.</h1>`
+  );
+});
 
 //this middleware should be at the last of all routes/handlers meaning if every handler is called and if throws error then next is called
 //middleware for error

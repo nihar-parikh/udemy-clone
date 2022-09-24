@@ -84,9 +84,12 @@ export const logoutUser = catchAsyncErrors(async (req, res, next) => {
   const decodedData = jwt.verify(token, process.env.JWT_SECRET);
   const user = await User.findById(decodedData._id); //we had given _id field while jwt.sign
 
+  //options must be same when sending JWT token
   res.cookie("token", null, {
     expires: new Date(Date.now()),
     httpOnly: true,
+    secure: true, //don't add in localhost
+    sameSite: "none",
   });
   res.status(200).json({
     success: true,
