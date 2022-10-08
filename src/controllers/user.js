@@ -80,9 +80,9 @@ export const loginUser = catchAsyncErrors(async (req, res, next) => {
 
 //logout user
 export const logoutUser = catchAsyncErrors(async (req, res, next) => {
-  const { token } = req.cookies; //cookies and not cookie
-  const decodedData = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await User.findById(decodedData._id); //we had given _id field while jwt.sign
+  // const { token } = req.cookies; //cookies and not cookie
+  // const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+  // const user = await User.findById(decodedData._id); //we had given _id field while jwt.sign
 
   //options must be same when sending JWT token
   res.cookie("token", null, {
@@ -93,7 +93,7 @@ export const logoutUser = catchAsyncErrors(async (req, res, next) => {
   });
   res.status(200).json({
     success: true,
-    message: `Hey ${user.name}, You are logged out successfully`,
+    message: `Hey, You are logged out successfully`,
   });
 });
 

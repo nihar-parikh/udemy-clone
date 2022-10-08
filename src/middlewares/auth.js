@@ -6,7 +6,7 @@ import User from "../models/user.js";
 export const isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
   //for response we have cookie while for request we have cookies
   const { token } = req.cookies; //cookies and not cookie
-  //   console.log(token);
+  // console.log(token);
   if (!token) {
     return next(new ErrorHandler("Please login to access this resource", 401));
   }
