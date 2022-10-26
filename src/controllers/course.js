@@ -38,6 +38,8 @@ export const createCourse = catchAsyncErrors(async (req, res, next) => {
   res.status(201).json({
     success: true,
     course,
+    message: "New Course has been created"
+
   });
 });
 
@@ -50,7 +52,7 @@ export const getAllCourses = catchAsyncErrors(async (req, res, next) => {
     req.query
   )
     .search()
-    .pagination(coursesPerPage);
+    // .pagination(coursesPerPage);
   const courses = await apiFeatures.query;
 
   res.status(200).json({

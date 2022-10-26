@@ -14,7 +14,9 @@ import {
   removeFromPlayLists,
   resetPassword,
   updatePassword,
-  updateUser,
+  updateProfile,
+  updateProfileImage,
+  // updateUser,
   updateUserRole,
 } from "../controllers/user.js";
 import { authorisedRoles, isAuthenticatedUser } from "../middlewares/auth.js";
@@ -22,14 +24,21 @@ import { singleUpload } from "../middlewares/multer.js";
 
 const router = express.Router();
 
-router.post("/register", singleUpload, registerUser);
+router.post("/signup", singleUpload, registerUser);
 router.post("/login", loginUser);
 router.get("/logout", logoutUser);
 router.post("/password/forgot", forgotPassword);
 router.put("/password/reset/:resetToken", resetPassword);
 router.get("/me", isAuthenticatedUser, getMyProfile);
 router.put("/password/update", isAuthenticatedUser, updatePassword);
-router.put("/me/update", isAuthenticatedUser, singleUpload, updateUser);
+router.put("/me/updateProfile", isAuthenticatedUser, updateProfile);
+router.put(
+  "/me/updateProfileImage",
+  isAuthenticatedUser,
+  singleUpload,
+  updateProfileImage
+);
+
 router.get(
   "/admin/allUsers",
   isAuthenticatedUser,
@@ -67,7 +76,7 @@ router.delete(
   authorisedRoles(["admin"]),
   deleteUser
 );
-router.put("/addToPlayLists", isAuthenticatedUser, addToPlayLists);
-router.delete("/removeFromPlayLists", isAuthenticatedUser, removeFromPlayLists);
+router.post("/addToPlayList", isAuthenticatedUser, addToPlayLists);
+router.delete("/removeFromPlayList", isAuthenticatedUser, removeFromPlayLists);
 
 export default router;

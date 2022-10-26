@@ -80,20 +80,20 @@ export const loginUser = catchAsyncErrors(async (req, res, next) => {
 
 //logout user
 export const logoutUser = catchAsyncErrors(async (req, res, next) => {
-  // const { token } = req.cookies; //cookies and not cookie
-  // const decodedData = jwt.verify(token, process.env.JWT_SECRET);
-  // const user = await User.findById(decodedData._id); //we had given _id field while jwt.sign
+  const { token } = req.cookies; //cookies and not cookie
+  const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await User.findById(decodedData._id); //we had given _id field while jwt.sign
 
   //options must be same when sending JWT token
   res.cookie("token", null, {
     expires: new Date(Date.now()),
     httpOnly: true,
-    secure: true, //don't add in localhost
-    sameSite: "none",
+    // secure: true, //don't add in localhost
+    // sameSite: "none",
   });
   res.status(200).json({
     success: true,
-    message: `Hey, You are logged out successfully`,
+    message: `Hey ${user.name}, You are logged out successfully`,
   });
 });
 
@@ -113,7 +113,7 @@ export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
   //its necessary to save bcoz user was already created but after passing resetPasswordToken to userSchema we have to save it.
   await user.save();
 
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
 
   const message = `Click on the given link to reset password :- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then, please ignore it.`;
 
@@ -162,7 +162,7 @@ export const resetPassword = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  if (req.body.newPassword !== req.body.confirmPassword) {
+  if (req.body.newPassword !== req.body.confirmNewPassword) {
     return next(new ErrorHandler("Password does not matched", 400));
   }
   user.password = req.body.newPassword;
@@ -186,7 +186,7 @@ export const getMyProfile = catchAsyncErrors(async (req, res, next) => {
 
 // update User password
 export const updatePassword = catchAsyncErrors(async (req, res, next) => {
-  const { oldPassword, newPassword, confirmPassword } = req.body;
+  const { oldPassword, newPassword, confirmNewPassword } = req.body;
   if (!oldPassword || !newPassword) {
     return next(new ErrorHandler("Please enter all field", 400));
   }
@@ -198,7 +198,7 @@ export const updatePassword = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Old password is incorrect", 400));
   }
 
-  if (newPassword !== confirmPassword) {
+  if (newPassword !== confirmNewPassword) {
     return next(new ErrorHandler("password does not match", 400));
   }
 
@@ -209,13 +209,57 @@ export const updatePassword = catchAsyncErrors(async (req, res, next) => {
   sendJWTToken(user, 200, "Password has been updated", res);
 });
 
-// update User Profile
-export const updateUser = catchAsyncErrors(async (req, res, next) => {
-  //no change of password here as updating password route is already created above
+// update User Profile with image
+// export const updateUser = catchAsyncErrors(async (req, res, next) => {
+//   //no change of password here as updating password route is already created above
 
+//   const { name, email } = req.body;
+
+//   const file = req.file;
+//   if (!name || !email) {
+//     return next(new ErrorHandler("Please enter all fields", 400));
+//   }
+//   const newUserData = {
+//     name,
+//     email,
+//   };
+
+//   if (file) {
+//     const user = await User.findById(req.user._id);
+
+//     await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+
+//     const fileUri = getDataUri(file);
+
+//     const myCloud = await cloudinary.v2.uploader.upload(fileUri.content);
+
+//     // const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+//     //   folder: "avatars",
+//     //   width: 150,
+//     //   crop: "scale",
+//     // });
+
+//     newUserData.avatar = {
+//       public_id: myCloud.public_id,
+//       url: myCloud.secure_url,
+//     };
+//   }
+
+//   const user = await User.findByIdAndUpdate(req.user._id, newUserData, {
+//     new: true,
+//     runValidators: true,
+//     useFindAndModify: false,
+//   });
+//   res.status(200).json({
+//     success: true,
+//     message: "Profile Updated Successfully",
+//     user,
+//   });
+// });
+
+// update User Profile without image
+export const updateProfile = catchAsyncErrors(async (req, res, next) => {
   const { name, email } = req.body;
-
-  const file = req.file;
   if (!name || !email) {
     return next(new ErrorHandler("Please enter all fields", 400));
   }
@@ -223,28 +267,6 @@ export const updateUser = catchAsyncErrors(async (req, res, next) => {
     name,
     email,
   };
-
-  if (file) {
-    const user = await User.findById(req.user._id);
-
-    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
-
-    const fileUri = getDataUri(file);
-
-    const myCloud = await cloudinary.v2.uploader.upload(fileUri.content);
-
-    // const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-    //   folder: "avatars",
-    //   width: 150,
-    //   crop: "scale",
-    // });
-
-    newUserData.avatar = {
-      public_id: myCloud.public_id,
-      url: myCloud.secure_url,
-    };
-  }
-
   const user = await User.findByIdAndUpdate(req.user._id, newUserData, {
     new: true,
     runValidators: true,
@@ -254,6 +276,31 @@ export const updateUser = catchAsyncErrors(async (req, res, next) => {
     success: true,
     message: "Profile Updated Successfully",
     user,
+  });
+});
+
+//update profile image
+export const updateProfileImage = catchAsyncErrors(async (req, res, next) => {
+  const file = req.file;
+
+  const user = await User.findById(req.user._id);
+
+  const fileUri = getDataUri(file);
+  const mycloud = await cloudinary.v2.uploader.upload(fileUri.content);
+
+  await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+
+  user.avatar = {
+    public_id: mycloud.public_id,
+    url: mycloud.secure_url,
+  };
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Profile Picture Updated Successfully",
+    userImage: user.avatar.url,
   });
 });
 
@@ -312,27 +359,46 @@ export const getAllUsers = catchAsyncErrors(async (req, res, next) => {
 // });
 
 // update User Role -- Admin
+
+//this is for any type of roles
+// export const updateUserRole = catchAsyncErrors(async (req, res, next) => {
+//   const newRole = {
+//     role: req.body.role,
+//   };
+
+//   let user = await User.findById(req.params.userId);
+
+//   if (!user) {
+//     return next(
+//       new ErrorHandler(`User doesn't exist with id : ${req.params.userId}`, 400)
+//     );
+//   }
+//   user = await User.findByIdAndUpdate(req.params.userId, newRole, {
+//     new: true,
+//     runValidators: true,
+//     useFindAndModify: false,
+//   });
+
+//   res.status(200).json({
+//     success: true,
+//     user,
+//   });
+// });
+
+//this is just for roles -> admin and user
 export const updateUserRole = catchAsyncErrors(async (req, res, next) => {
-  const newRole = {
-    role: req.body.role,
-  };
+  const user = await User.findById(req.params.userId);
 
-  let user = await User.findById(req.params.userId);
+  if (!user) return next(new ErrorHandler("User not found", 404));
 
-  if (!user) {
-    return next(
-      new ErrorHandler(`User doesn't exist with id : ${req.params.userId}`, 400)
-    );
-  }
-  user = await User.findByIdAndUpdate(req.params.userId, newRole, {
-    new: true,
-    runValidators: true,
-    useFindAndModify: false,
-  });
+  if (user.role === "user") user.role = "admin";
+  else user.role = "user";
+
+  await user.save();
 
   res.status(200).json({
     success: true,
-    user,
+    message: "Role Updated",
   });
 });
 
